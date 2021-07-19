@@ -3,29 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Data;
-using System.Data.Odbc;
+using System.Data.SqlClient;
 
 namespace clsConexao
 {
-    public class clsConexao
+    public class clsConexaoSQL
     {
         #region DECLARAÇÃO DE ATRIBUTOS
 
-        private string _strCon;
-        private OdbcCommand _cSQL = null;
+        private string stringConexao;
+        private SqlCommand comando = null;
 
-        private OdbcConnection conexao;
+        private SqlConnection conexao;
 
         #endregion
 
-        #region MÉTODOS DE CONEXÃO
+        #region Métodos de Conexão
 
+        #region Abertura de Conexão
+        /// <summary>
+        /// Abre a Conexão
+        /// </summary>
         private void Abrir()
         {
             try
             {
-                conexao = new OdbcConnection();
-                conexao.ConnectionString = _strCon;
+                conexao = new SqlConnection();
+                conexao.ConnectionString = stringConexao;
                 conexao.Open();
             }
             catch (Exception e)
@@ -33,7 +37,9 @@ namespace clsConexao
                 throw e;
             }
         }
+        #endregion
 
+        #region Fechamento de Conexão
         /// <summary>
         /// Fecha e remove a conexão da memória. O uso deste método só é necessário após o uso dos métodos que retornam um DataReader.
         /// </summary>
@@ -45,12 +51,13 @@ namespace clsConexao
                 conexao.Dispose();
             }
         }
+        #endregion
 
         #endregion
 
-        #region MÉTODOS FUNCIONAIS
+        #region Métodos Funcionais
 
-        #region QUERY
+        #region Query
 
         /// <summary>
         /// Executa um comando SQL "Sem Retorno", ou seja um comando que não retorna valor (Ex. Insert, Update, Delete).
@@ -61,10 +68,12 @@ namespace clsConexao
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
-                cSQL.CommandType = CommandType.Text;
-                cSQL.CommandText = ComandoSQL;
-                cSQL.Connection = conexao;
+                SqlCommand cSQL = new SqlCommand
+                {
+                    CommandType = CommandType.Text,
+                    CommandText = ComandoSQL,
+                    Connection = conexao
+                };
                 cSQL.ExecuteNonQuery();
             }
             catch (Exception e)
@@ -81,12 +90,12 @@ namespace clsConexao
         /// Executa um comando SQL "Com Retorno", ou seja um comando que retorna valor (Ex. Select) e o disponibiliza em um DataReader.
         /// </summary>
         /// <param name="ComandoSQL">Comando (Query) SQL a ser executado.</param>
-        public OdbcDataReader ComandoCR(string ComandoSQL)
+        public SqlDataReader ComandoCR(string ComandoSQL)
         {
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
+                SqlCommand cSQL = new SqlCommand();
                 cSQL.CommandType = CommandType.Text;
                 cSQL.CommandText = ComandoSQL;
                 cSQL.Connection = conexao;
@@ -100,9 +109,7 @@ namespace clsConexao
 
         #endregion
 
-        #region STORED PROCEDURE
-
-        #region INICIAÇÃO
+        #region Stored Procedure
 
         /// <summary>
         /// Início do procedimento para chamada de uma Stored Procedure.
@@ -113,10 +120,10 @@ namespace clsConexao
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
+                SqlCommand cSQL = new SqlCommand();
                 cSQL.CommandType = CommandType.StoredProcedure;
-                cSQL.CommandText = string.Concat("call ", Nome);
-                _cSQL = cSQL;
+                cSQL.CommandText = Nome;
+                comando = cSQL;
             }
             catch (Exception e)
             {
@@ -128,30 +135,31 @@ namespace clsConexao
             }
         }
 
-        #endregion
+        #region Adiciona parâmetros
 
-        #region ADICIONAR PARAMETROS
-
+        #region Inteiros
         /// <summary>
         /// Adiciona um parametro do tipo inteiro à Stored Procedure anteriormente iniciada.
         /// </summary>
         /// <param name="Valor">Valor do parametro.</param>
-        public void AdicionarParametroInteiro(int Valor)
+        /// <param name="NomeParametro">Nome do Parametro. </param>
+        public void AdicionarParametroInteiro(string NomeParametro, int Valor)
         {
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
-                cSQL = _cSQL;
+                SqlCommand cSQL = new SqlCommand();
+                cSQL = comando;
 
-                if (cSQL.CommandText.EndsWith(")"))
-                    cSQL.CommandText = cSQL.CommandText.Replace(")", ",?)");
-                else
-                    cSQL.CommandText = string.Concat(cSQL.CommandText, "(?)");
+                SqlParameter parametro = new SqlParameter();
+                parametro.ParameterName = NomeParametro;
+                parametro.SqlDbType = SqlDbType.Int;
+                parametro.Direction = ParameterDirection.Input;
+                parametro.Value = Valor;
 
-                cSQL.Parameters.Add(new OdbcParameter("?", Valor));
+                comando.Parameters.Add(parametro);
 
-                _cSQL = cSQL;
+                comando = cSQL;
             }
             catch (Exception e)
             {
@@ -162,27 +170,31 @@ namespace clsConexao
                 FecharConexao();
             }
         }
+        #endregion
 
+        #region Decimal
         /// <summary>
         /// Adiciona um parametro do tipo decimal à Stored Procedure anteriormente iniciada.
         /// </summary>
         /// <param name="Valor">Valor do parametro.</param>
-        public void AdicionarParametroDecimal(double Valor)
+        /// <param name="NomeParametro">Nome do Parâmetro</param>
+        public void AdicionarParametroDecimal(string NomeParametro,double Valor)
         {
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
-                cSQL = _cSQL;
+                SqlCommand cSQL = new SqlCommand();
+                cSQL = comando;
 
-                if (cSQL.CommandText.EndsWith(")"))
-                    cSQL.CommandText = cSQL.CommandText.Replace(")", ",?)");
-                else
-                    cSQL.CommandText = string.Concat(cSQL.CommandText, "(?)");
+                SqlParameter parametro = new SqlParameter();
+                parametro.ParameterName = NomeParametro;
+                parametro.SqlDbType = SqlDbType.Float;
+                parametro.Direction = ParameterDirection.Input;
+                parametro.Value = Valor;
 
-                cSQL.Parameters.Add(new OdbcParameter("?", Valor));
+                comando.Parameters.Add(parametro);
 
-                _cSQL = cSQL;
+                comando = cSQL;
             }
             catch (Exception e)
             {
@@ -193,27 +205,32 @@ namespace clsConexao
                 FecharConexao();
             }
         }
+        #endregion
 
+        #region String
         /// <summary>
         /// Adiciona um parametro do tipo texto à Stored Procedure anteriormente iniciada.
         /// </summary>
         /// <param name="Valor">Valor do parametro.</param>
-        public void AdicionarParametroTexto(string Valor)
+        /// <param name="NomeParametro">Nome do parâmetro</param>
+        
+        public void AdicionarParametroTexto(string NomeParametro,string Valor)
         {
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
-                cSQL = _cSQL;
+                SqlCommand cSQL = new SqlCommand();
+                cSQL = comando;
 
-                if (cSQL.CommandText.EndsWith(")"))
-                    cSQL.CommandText = cSQL.CommandText.Replace(")", ",?)");
-                else
-                    cSQL.CommandText = string.Concat(cSQL.CommandText, "(?)");
+                SqlParameter parametro = new SqlParameter();
+                parametro.ParameterName = NomeParametro;
+                parametro.SqlDbType = SqlDbType.NVarChar;
+                parametro.Direction = ParameterDirection.Input;
+                parametro.Value = Valor;
 
-                cSQL.Parameters.Add(new OdbcParameter("?", Valor));
+                comando.Parameters.Add(parametro);
 
-                _cSQL = cSQL;
+                comando = cSQL;
             }
             catch (Exception e)
             {
@@ -224,27 +241,31 @@ namespace clsConexao
                 FecharConexao();
             }
         }
+        #endregion
 
+        #region Bool
         /// <summary>
         /// Adiciona um parametro do tipo booleano à Stored Procedure anteriormente iniciada.
         /// </summary>
         /// <param name="Valor">Valor do parametro.</param>
-        public void AdicionarParametroBooleano(bool Valor)
+        /// <param name="NomeParametro">Nome do parametro</param>
+        public void AdicionarParametroBooleano(string NomeParametro,bool Valor)
         {
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
-                cSQL = _cSQL;
+                SqlCommand cSQL = new SqlCommand();
+                cSQL = comando;
 
-                if (cSQL.CommandText.EndsWith(")"))
-                    cSQL.CommandText = cSQL.CommandText.Replace(")", ",?)");
-                else
-                    cSQL.CommandText = string.Concat(cSQL.CommandText, "(?)");
+                SqlParameter parametro = new SqlParameter();
+                parametro.ParameterName = NomeParametro;
+                parametro.SqlDbType = SqlDbType.Bit;
+                parametro.Direction = ParameterDirection.Input;
+                parametro.Value = Valor;
 
-                cSQL.Parameters.Add(new OdbcParameter("?", Valor));
+                comando.Parameters.Add(parametro);
 
-                _cSQL = cSQL;
+                comando = cSQL;
             }
             catch (Exception e)
             {
@@ -255,10 +276,11 @@ namespace clsConexao
                 FecharConexao();
             }
         }
+        #endregion
 
         #endregion
 
-        #region CHAMADA SPs
+        #region Chamada Stored Procedures
 
         /// <summary>
         /// Executa a Stored Procedure "Sem Retorno" iniciada, com ou sem parametros adicionados.
@@ -268,8 +290,8 @@ namespace clsConexao
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
-                cSQL = _cSQL;
+                SqlCommand cSQL = new SqlCommand();
+                cSQL = comando;
                 cSQL.Connection = conexao;
 
                 cSQL.ExecuteNonQuery();
@@ -280,7 +302,7 @@ namespace clsConexao
             }
             finally
             {
-                _cSQL = null;
+                comando = null;
                 FecharConexao();
             }
         }
@@ -288,13 +310,13 @@ namespace clsConexao
         /// <summary>
         /// Executa a Stored Procedure "Com Retorno" iniciada, com ou sem parametros adicionados, e disponibiliza o resultado em um DataReader.
         /// </summary>
-        public OdbcDataReader ChamarStoredProcedureCR()
+        public SqlDataReader ChamarStoredProcedureCR()
         {
             try
             {
                 Abrir();
-                OdbcCommand cSQL = new OdbcCommand();
-                cSQL = _cSQL;
+                SqlCommand cSQL = new SqlCommand();
+                cSQL = comando;
                 cSQL.Connection = conexao;
 
                 return cSQL.ExecuteReader();
@@ -305,7 +327,7 @@ namespace clsConexao
             }
             finally
             {
-                _cSQL = null;
+                comando = null;
             }
         }
 
@@ -315,20 +337,18 @@ namespace clsConexao
 
         #endregion
 
-        #region CONSTRUTOR
+        #region Construtor
 
         /// <summary>
-        /// Para instanciar a classe de conexão com o banco de dados, criando a linha de conexão MySQL.
+        /// Para instanciar a classe de conexão com o banco de dados, criando a linha de conexão SQL Server.
         /// </summary>
-        /// <param name="BD_Fonte">Base de dados utilizada.</param>
+        /// <param name="DatabaseName">Base de dados utilizada.</param>
         /// <param name="Servidor">Endereço IP do Servidor.</param>
-        /// <param name="ID_Usuario">Identificação do usuário.</param>
+        /// <param name="Usuario">Identificação do usuário.</param>
         /// <param name="Senha">Senha do usuário.</param>
-        public clsConexao(string BD_Fonte, string Servidor, string ID_Usuario, string Senha)
+        public clsConexaoSQL(string DatabaseName, string Servidor, string Usuario, string Senha)
         {
-            _strCon = "DRIVER={MySQL ODBC 3.51 Driver};DATABASE=" + BD_Fonte + ";SERVER=" + Servidor + ";UID=" + ID_Usuario + ";PWD=" + Senha;
-            //_strCon = string.Concat("DRIVER={MySQL ODBC 3.51 Driver};DATABASE=", _baseDeDados, ";SERVER=", _servidor, ";UID=", _IDUsuario, ";PWD=", _senha);
-            //_strCon = String.Format("DRIVER={MySQL ODBC 3.51 Driver};DATABASE={0};SERVER={1};UID={2};PWD={3}", _baseDeDados, _servidor, _IDUsuario, _senha);
+            stringConexao = "Data Source = " + Servidor + ";Initial Catalog = " + DatabaseName + "; User ID = " + Usuario + "; Password = " + Senha;
         }
 
         #endregion
