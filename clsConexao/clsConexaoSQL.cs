@@ -11,7 +11,7 @@ namespace clsConexao
     {
         #region DECLARAÇÃO DE ATRIBUTOS
 
-        private string stringConexao;
+        public string stringConexao;
         private SqlCommand comando = null;
 
         private SqlConnection conexao;
@@ -178,7 +178,7 @@ namespace clsConexao
         /// </summary>
         /// <param name="Valor">Valor do parametro.</param>
         /// <param name="NomeParametro">Nome do Parâmetro</param>
-        public void AdicionarParametroDecimal(string NomeParametro,double Valor)
+        public void AdicionarParametroDecimal(string NomeParametro,decimal Valor)
         {
             try
             {
@@ -188,7 +188,7 @@ namespace clsConexao
 
                 SqlParameter parametro = new SqlParameter();
                 parametro.ParameterName = NomeParametro;
-                parametro.SqlDbType = SqlDbType.Float;
+                parametro.SqlDbType = SqlDbType.Decimal;
                 parametro.Direction = ParameterDirection.Input;
                 parametro.Value = Valor;
 
@@ -278,6 +278,41 @@ namespace clsConexao
         }
         #endregion
 
+        #region Datetime
+        /// <summary>
+        /// Adiciona um parametro do tipo booleano à Stored Procedure anteriormente iniciada.
+        /// </summary>
+        /// <param name="Valor">Valor do parametro.</param>
+        /// <param name="NomeParametro">Nome do parametro</param>
+        public void AdicionarParametroDatetime(string NomeParametro, DateTime Valor)
+        {
+            try
+            {
+                Abrir();
+                SqlCommand cSQL = new SqlCommand();
+                cSQL = comando;
+
+                SqlParameter parametro = new SqlParameter();
+                parametro.ParameterName = NomeParametro;
+                parametro.SqlDbType = SqlDbType.DateTime;
+                parametro.Direction = ParameterDirection.Input;
+                parametro.Value = Valor;
+
+                comando.Parameters.Add(parametro);
+
+                comando = cSQL;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally
+            {
+                FecharConexao();
+            }
+        }
+        #endregion
+
         #endregion
 
         #region Chamada Stored Procedures
@@ -298,7 +333,7 @@ namespace clsConexao
             }
             catch (Exception e)
             {
-                throw e;
+                throw;
             }
             finally
             {
@@ -353,4 +388,6 @@ namespace clsConexao
 
         #endregion
     }
+
+
 }
