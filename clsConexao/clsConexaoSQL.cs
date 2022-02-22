@@ -331,7 +331,7 @@ namespace clsConexao
 
                 cSQL.ExecuteNonQuery();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw;
             }
